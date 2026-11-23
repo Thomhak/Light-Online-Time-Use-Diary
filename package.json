@@ -1,9 +1,10 @@
 {
   "name": "timeuse_tool",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "",
   "scripts": {
-    "start": "live-server --port=8080 --no-browser"
+    "start": "live-server --port=8080 --no-browser",
+    "test:unit": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test \"tests/unit/*.test.js\""
   },
   "devDependencies": {
     "live-server": "^1.2.2"

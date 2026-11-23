@@ -36,6 +36,7 @@ import {
     TIMELINE_HOURS
 } from './constants.js';
 import { checkAndRequestPID } from './utils.js';
+import { resolveReferenceDay } from './dates.js';
 
 let selectedActivity = null;
 
@@ -48,14 +49,15 @@ window.timelineManager = {
     keys: [], // Available timeline keys
     currentIndex: 0, // Current timeline index
     study: {}, // Store URL parameters
-    general: {} // Store general configuration
+    general: {}, // Store general configuration
+    diaryDate: null // Reference day (YYYY-MM-DD), fixed once per diary in init()
 };
 
 // Function to calculate timeline coverage in minutes
 window.getTimelineCoverage = getTimelineCoverage;
 
 import { 
-    formatTimeDDMMYYYYHHMM,
+    formatEpisodeTimes,
     formatTimeHHMM,
     timeToMinutes,
     findNearestMarkers,
@@ -1219,7 +1221,7 @@ function initTimelineInteraction(timeline) {
                     const activityIndex = currentData.findIndex(activity => activity.id === activityId);
                     
                     if (activityIndex !== -1) {
-                        const times = formatTimeDDMMYYYYHHMM(newStartTime, newEndTime);
+                        const times = formatEpisodeTimes(startMinutes, endMinutes);
                         if (!times.startTime || !times.endTime) {
                             throw new Error('Activity start time and end time must be defined');
                         }
@@ -1520,9 +1522,7 @@ function initTimelineInteraction(timeline) {
         document.querySelectorAll('.activity-button').forEach(btn => btn.classList.remove('selected'));
         selectedActivity = null;
 
-        const startTime = currentBlock.dataset.start;
-        const endTime = currentBlock.dataset.end;
-        const times = formatTimeDDMMYYYYHHMM(startTime, endTime);
+        const times = formatEpisodeTimes(startMinutes, endMinutes);
         if (!times.startTime || !times.endTime) {
             throw new Error('Activity start time and end time must be defined');
         }
@@ -1589,7 +1589,8 @@ async function init() {
             keys: [],
             currentIndex: 0,
             study: {},
-            general: {}
+            general: {},
+            diaryDate: null
         };
 
         // Now sync URL parameters so they are stored in timelineManager.study
@@ -1629,6 +1630,22 @@ async function init() {
             window.location.href = redirectUrl.toString();
             return;
         }
+
+        // Fix the diary's reference day once, now that the diary opens (dates.js): a
+        // valid DIARY_DATE link parameter, else the day before, counted from 04:00 to
+        // 04:00. Every episode's start and end are built from it and the block's
+        // minutes on the timeline, so the device clock when a block is placed or
+        // resized no longer matters. v1.0.0 read the clock each time: after midnight
+        // on the 1st it gave the previous month, a diary filled in after midnight was
+        // dated a day late, and one filled in across midnight was split over two days.
+        const referenceDay = resolveReferenceDay({
+            param: new URLSearchParams(window.location.search).get('DIARY_DATE'),
+            now: new Date()
+        });
+        if (referenceDay.warning) {
+            console.warn('[dates]', referenceDay.warning);
+        }
+        window.timelineManager.diaryDate = referenceDay.date;
 
         // Initialize timeline management structure with timeline keys
         window.timelineManager.keys = Object.keys(data.timeline);
