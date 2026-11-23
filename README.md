@@ -96,6 +96,7 @@ The application utilizes several modern web features:
 - `backdrop-filter` with `@supports` fallbacks
 
 ### Known Issues
+- **Dates of activities in v1.0.0 (fixed in v1.0.1).** v1.0.0 dated each activity from the device's clock at the moment the block was placed or resized, which went wrong in two cases. When a diary covered the last day of a month, activities after midnight got the wrong month: for a diary of 31 October, 00:30 was recorded as 1 October instead of 1 November. A diary filled in after midnight was dated one day too late, and one filled in across midnight was split over two days. The times of day were right, except in the hour skipped when the clocks go forward, which v1.0.0 recorded an hour later. v1.0.1 fixes the date of each diary when it opens (the day before, counted from 4am to 4am, or a `DIARY_DATE=YYYY-MM-DD` link parameter). Open Play's data were collected with v1.0.0; its cleaned diary data are repaired from the release that follows Open Play v1.3.0 (columns `repaired_rollover` and `repaired_midnight`), and its raw file keeps the dates as recorded.
 - Internet Explorer: Not supported (any version)
 - Legacy Edge (pre-Chromium): Not supported
 - Firefox: Limited support for `env(safe-area-inset-*)` features
